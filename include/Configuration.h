@@ -42,6 +42,8 @@
 #define LOG_MODULE_COUNT 16
 #define LOG_MODULE_NAME_STRLEN 32
 
+#define INTEGRATIONS_GOE_MAX_HOSTNAME_STRLEN 128
+
 struct CHANNEL_CONFIG_T {
     uint16_t MaxChannelPower;
     char Name[CHAN_MAX_NAME_STRLEN];
@@ -190,6 +192,14 @@ struct CONFIG_T {
             int8_t Level;
         } Modules[LOG_MODULE_COUNT];
     } Logging;
+
+    struct {
+        // go-e Controller
+        bool GoeControllerEnabled;
+        bool GoeControllerPublishHomeCategory;
+        char GoeControllerHostname[INTEGRATIONS_GOE_MAX_HOSTNAME_STRLEN + 1];
+        uint32_t GoeControllerUpdateInterval;
+    } Integrations;
 };
 
 class ConfigurationClass {
