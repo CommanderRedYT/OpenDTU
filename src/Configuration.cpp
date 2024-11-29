@@ -365,6 +365,8 @@ void ConfigurationClass::migrate()
         return;
     }
 
+    Utils::skipBom(f);
+
     JsonDocument doc;
 
     // Deserialize the JSON document
