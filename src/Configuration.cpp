@@ -8,6 +8,7 @@
 #include "defaults.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <esp_log.h>
 #include <nvs_flash.h>
 
 #undef TAG
@@ -158,6 +159,15 @@ bool ConfigurationClass::write()
     integrations["goe_ctrl_enabled"] = config.Integrations.GoeControllerEnabled;
     integrations["goe_ctrl_publish_home_category"] = config.Integrations.GoeControllerPublishHomeCategory;
     integrations["goe_ctrl_update_interval"] = config.Integrations.GoeControllerUpdateInterval;
+
+    JsonObject logging = doc["logging"].to<JsonObject>();
+    logging["default"] = config.Logging.Default;
+    JsonArray modules = logging["modules"].to<JsonArray>();
+    for (uint8_t i = 0; i < LOG_MODULE_COUNT; i++) {
+        JsonObject module = modules.add<JsonObject>();
+        module["level"] = config.Logging.Modules[i].Level;
+        module["name"] = config.Logging.Modules[i].Name;
+    }
 
     if (!Utils::checkJsonAlloc(doc, __FUNCTION__, __LINE__)) {
         return false;
@@ -341,6 +351,15 @@ bool ConfigurationClass::read()
     config.Integrations.GoeControllerPublishHomeCategory = integrations["goe_ctrl_publish_home_category"] | INTEGRATIONS_GOE_CTRL_ENABLE_HOME_CATEGORY;
     config.Integrations.GoeControllerUpdateInterval = integrations["goe_ctrl_update_interval"] | INTEGRATIONS_GOE_CTRL_UPDATE_INTERVAL;
 
+    JsonObject logging = doc["logging"];
+    config.Logging.Default = logging["default"] | ESP_LOG_ERROR;
+    JsonArray modules = logging["modules"];
+    for (uint8_t i = 0; i < LOG_MODULE_COUNT; i++) {
+        JsonObject module = modules[i].as<JsonObject>();
+        strlcpy(config.Logging.Modules[i].Name, module["name"] | "", sizeof(config.Logging.Modules[i].Name));
+        config.Logging.Modules[i].Level = module["level"] | ESP_LOG_VERBOSE;
+    }
+
     f.close();
 
     // Check for default DTU serial
@@ -438,6 +457,12 @@ void ConfigurationClass::migrate()
         }
     }
 
+    if (config.Cfg.Version < 0x00011e00) {
+        config.Logging.Default = ESP_LOG_VERBOSE;
+        strlcpy(config.Logging.Modules[0].Name, "CORE", sizeof(config.Logging.Modules[0].Name));
+        config.Logging.Modules[0].Level = ESP_LOG_ERROR;
+    }
+
     f.close();
 
     config.Cfg.Version = CONFIG_VERSION;
@@ -497,6 +522,17 @@ void ConfigurationClass::deleteInverterById(const uint8_t id)
         config.Inverter[id].channel[c].YieldTotalOffset = 0.0f;
         strlcpy(config.Inverter[id].channel[c].Name, "", sizeof(config.Inverter[id].channel[c].Name));
     }
+}
+
+int8_t ConfigurationClass::getIndexForLogModule(const String& moduleName) const
+{
+    for (uint8_t i = 0; i < LOG_MODULE_COUNT; i++) {
+        if (strcmp(config.Logging.Modules[i].Name, moduleName.c_str()) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 void ConfigurationClass::loop()
