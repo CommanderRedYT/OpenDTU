@@ -192,14 +192,6 @@ struct CONFIG_T {
             int8_t Level;
         } Modules[LOG_MODULE_COUNT];
     } Logging;
-
-    struct {
-        // go-e Controller
-        bool GoeControllerEnabled;
-        bool GoeControllerPublishHomeCategory;
-        char GoeControllerHostname[INTEGRATIONS_GOE_MAX_HOSTNAME_STRLEN + 1];
-        uint32_t GoeControllerUpdateInterval;
-    } Integrations;
 };
 
 class ConfigurationClass {

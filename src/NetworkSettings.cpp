@@ -334,7 +334,6 @@ void NetworkSettingsClass::applyConfig()
     } else {
         success = WiFi.begin() != WL_CONNECT_FAILED;
     }
-    MessageOutput.println("done. Connecting to " + String(Configuration.get().WiFi.Ssid));
 
     ESP_LOG_LEVEL_LOCAL((success ? ESP_LOG_INFO : ESP_LOG_ERROR), TAG, "Configuring WiFi %s", success ? "done" : "failed");
 
